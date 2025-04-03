@@ -6,8 +6,9 @@ const path = require('path');
 const { exec } = require('child_process');
 
 // Настройки
-const PORT = 8001; // порт для локального сервера
+const PORT = process.env.PORT || 8001; // порт для локального сервера
 const STATIC_DIR = __dirname; // директория с статическими файлами
+const HOST = '0.0.0.0'; // слушаем на всех интерфейсах для работы в Docker
 
 // Типы MIME
 const MIME_TYPES = {
@@ -129,26 +130,29 @@ const server = http.createServer((req, res) => {
 });
 
 // Запускаем сервер
-server.listen(PORT, () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
+server.listen(PORT, HOST, () => {
+    console.log(`Сервер запущен на ${HOST}:${PORT}`);
     console.log(`Откройте в браузере: http://localhost:${PORT}`);
     
-    // Пытаемся автоматически открыть браузер
-    let command;
-    switch (process.platform) {
-        case 'darwin': // macOS
-            command = `open http://localhost:${PORT}`;
-            break;
-        case 'win32': // Windows
-            command = `start http://localhost:${PORT}`;
-            break;
-        default: // Linux
-            command = `xdg-open http://localhost:${PORT}`;
-    }
-    
-    exec(command, (error) => {
-        if (error) {
-            console.log('Не удалось автоматически открыть браузер.');
+    // В Docker-контейнере не открываем браузер автоматически
+    if (process.env.DOCKER_CONTAINER !== 'true') {
+        // Пытаемся автоматически открыть браузер
+        let command;
+        switch (process.platform) {
+            case 'darwin': // macOS
+                command = `open http://localhost:${PORT}`;
+                break;
+            case 'win32': // Windows
+                command = `start http://localhost:${PORT}`;
+                break;
+            default: // Linux
+                command = `xdg-open http://localhost:${PORT}`;
         }
-    });
+        
+        exec(command, (error) => {
+            if (error) {
+                console.log('Не удалось автоматически открыть браузер.');
+            }
+        });
+    }
 }); 
