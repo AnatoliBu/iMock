@@ -10,7 +10,6 @@
 
 - [Установка и настройка WireMock](wiremock_installation.md) - руководство по установке, настройке и запуску WireMock
 - [Структура JSON-маппингов WireMock](wiremock_json_mappings.md) - описание формата маппингов WireMock
-- [Маппинги Iiko API](iiko_api_mappings.md) - информация о готовых маппингах для Iiko API
 
 ### WireMock Viewer
 
