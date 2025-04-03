@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Имя образа
-IMAGE_NAME="imock-wiremock-viewer"
+IMAGE_NAME="imock"
 PORT=8001
 
 echo -e "${YELLOW}Сборка Docker-образа ${IMAGE_NAME}...${NC}"
