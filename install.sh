@@ -14,10 +14,42 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Проверяем наличие Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    echo -e "${YELLOW}Docker Compose не найден. Убедитесь, что он установлен и доступен в PATH.${NC}"
-    exit 1
+# Ищем Docker Compose в различных местах или используем переданный путь
+if [[ -n "$1" && -f "$1" && -x "$1" ]]; then
+    DOCKER_COMPOSE_CMD="$1"
+    echo -e "${GREEN}Используем Docker Compose по указанному пути: $DOCKER_COMPOSE_CMD${NC}"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+    echo -e "${GREEN}Docker Compose найден в PATH.${NC}"
+elif [ -f "/usr/local/bin/docker-compose" ]; then
+    DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
+    echo -e "${GREEN}Docker Compose найден в /usr/local/bin/docker-compose.${NC}"
+elif [ -f "$HOME/.local/bin/docker-compose" ]; then
+    DOCKER_COMPOSE_CMD="$HOME/.local/bin/docker-compose"
+    echo -e "${GREEN}Docker Compose найден в $HOME/.local/bin/docker-compose.${NC}"
+elif [ -f "/opt/bin/docker-compose" ]; then
+    DOCKER_COMPOSE_CMD="/opt/bin/docker-compose"
+    echo -e "${GREEN}Docker Compose найден в /opt/bin/docker-compose.${NC}"
+elif [ -f "/usr/bin/docker-compose" ]; then
+    DOCKER_COMPOSE_CMD="/usr/bin/docker-compose"
+    echo -e "${GREEN}Docker Compose найден в /usr/bin/docker-compose.${NC}"
+elif docker --help | grep -q 'compose'; then
+    # Проверяем наличие подкоманды 'compose' у docker (Docker Compose V2)
+    DOCKER_COMPOSE_CMD="docker compose"
+    echo -e "${GREEN}Используем Docker Compose V2 через команду 'docker compose'.${NC}"
+else
+    echo -e "${YELLOW}Docker Compose не найден. Пожалуйста, укажите путь к Docker Compose:${NC}"
+    echo -e "${YELLOW}Пример: ./install.sh /путь/к/docker-compose${NC}"
+    echo -e "${YELLOW}Или установите Docker Compose и добавьте его в PATH.${NC}"
+    
+    # Спрашиваем пользователя, хочет ли он продолжить без Docker Compose
+    read -p "Продолжить установку без Docker Compose, используя только Docker? (y/n): " continue_without_dc
+    if [[ "$continue_without_dc" == "y" || "$continue_without_dc" == "Y" ]]; then
+        echo -e "${YELLOW}Продолжаем установку без Docker Compose.${NC}"
+        DOCKER_COMPOSE_CMD=""
+    else
+        exit 1
+    fi
 fi
 
 # Проверяем текущие сетевые настройки Docker
@@ -171,11 +203,42 @@ networks:
       name: ${NETWORK_NAME}
 EOF
 
-# Собираем и запускаем контейнер iMock
+# Собираем и запускаем контейнер iMock (Docker Compose или только Docker)
 echo -e "${YELLOW}Сборка и запуск iMock...${NC}"
-docker-compose up -d --build
 
-if [ $? -eq 0 ]; then
+if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+    # Используем Docker Compose
+    $DOCKER_COMPOSE_CMD up -d --build
+    RESULT=$?
+else
+    # Используем только Docker
+    echo -e "${YELLOW}Запуск без Docker Compose. Использование прямых команд Docker...${NC}"
+    
+    # Собираем образ
+    docker build -t imock .
+    
+    # Проверяем, существует ли уже контейнер imock
+    if docker ps -a --format '{{.Names}}' | grep -q '^imock$'; then
+        echo -e "${YELLOW}Контейнер imock уже существует. Останавливаем и удаляем...${NC}"
+        docker stop imock || true
+        docker rm imock || true
+    fi
+    
+    # Запускаем контейнер
+    docker run -d --name imock \
+        --network=${NETWORK_NAME} \
+        -p 8001:8001 \
+        -e PORT=8001 \
+        -e DOCKER_CONTAINER=true \
+        -e WIREMOCK_TOKEN=${WIREMOCK_TOKEN} \
+        -v $(pwd)/nginx_imock.conf:/app/nginx_imock.conf:ro \
+        -v $(pwd)/htpasswd:/app/htpasswd:ro \
+        imock
+    
+    RESULT=$?
+fi
+
+if [ $RESULT -eq 0 ]; then
     echo -e "${GREEN}iMock успешно запущен!${NC}"
     echo -e "${GREEN}iMock (WireMock Viewer) доступен по адресу: http://localhost:8001${NC}"
     

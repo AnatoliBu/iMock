@@ -5,7 +5,8 @@
 ## Предварительные требования
 
 - Доступ к серверу через SSH
-- Docker и Docker Compose уже установлены на сервере
+- Docker установлен на сервере
+- Docker Compose установлен или опционально (скрипт может работать только с Docker)
 - Уже запущенные контейнеры nginx и wiremock
 - Docker должен быть доступен без sudo прав
 
@@ -28,13 +29,21 @@ chmod +x install.sh
 ./install.sh
 ```
 
+Если Docker Compose установлен, но не находится в PATH, вы можете явно указать путь:
+```bash
+./install.sh /путь/к/docker-compose
+```
+
+Также вы можете продолжить установку без Docker Compose, если выберете соответствующую опцию в скрипте.
+
 Скрипт проведет вас через следующие шаги:
-1. Создаст или подключится к существующей Docker-сети
-2. Проверит наличие контейнеров nginx и wiremock и добавит их в общую сеть
-3. Предложит настроить токен авторизации для WireMock API
-4. Попросит указать учетные данные для HTTP-авторизации
-5. Создаст конфигурацию nginx для iMock
-6. Соберет и запустит контейнер iMock
+1. Найдет Docker Compose или предложит использовать только Docker
+2. Создаст или подключится к существующей Docker-сети
+3. Проверит наличие контейнеров nginx и wiremock и добавит их в общую сеть
+4. Предложит настроить токен авторизации для WireMock API
+5. Попросит указать учетные данные для HTTP-авторизации
+6. Создаст конфигурацию nginx для iMock
+7. Соберет и запустит контейнер iMock
 
 ### 4. Настройка Nginx для проксирования iMock
 
@@ -72,6 +81,21 @@ docker restart nginx
 4. В поле Токен введите `Bearer ВАШ_ТОКЕН`.
 
 ## Устранение неполадок
+
+### Проблема с Docker Compose
+
+Если Docker Compose не найден или вызывает ошибки:
+
+```bash
+# Проверьте наличие Docker Compose
+which docker-compose
+
+# Если Docker Compose установлен, но не найден в PATH, укажите полный путь:
+./install.sh /полный/путь/к/docker-compose
+
+# Вы также можете запустить скрипт без Docker Compose, выбрав опцию 'y',
+# когда скрипт спросит "Продолжить установку без Docker Compose?"
+```
 
 ### Проблема с Docker-сетью
 
@@ -111,8 +135,22 @@ grep Bearer nginx_imock.conf
 
 3. Остановите и перезапустите контейнер iMock с правильными переменными окружения:
 ```bash
-docker-compose down
-WIREMOCK_HOST=имя_контейнера_wiremock WIREMOCK_TOKEN="Bearer ВАШ_ТОКЕН" docker-compose up -d
+# Если использовался Docker Compose:
+$DOCKER_COMPOSE_CMD down
+WIREMOCK_HOST=имя_контейнера_wiremock WIREMOCK_TOKEN="Bearer ВАШ_ТОКЕН" $DOCKER_COMPOSE_CMD up -d
+
+# Если использовался только Docker:
+docker stop imock
+docker rm imock
+docker run -d --name imock \
+  --network=wiremock-network \
+  -p 8001:8001 \
+  -e WIREMOCK_HOST=имя_контейнера_wiremock \
+  -e WIREMOCK_PORT=8080 \
+  -e WIREMOCK_TOKEN="Bearer ВАШ_ТОКЕН" \
+  -v $(pwd)/nginx_imock.conf:/app/nginx_imock.conf:ro \
+  -v $(pwd)/htpasswd:/app/htpasswd:ro \
+  imock
 ```
 
 ## Альтернативный метод настройки
