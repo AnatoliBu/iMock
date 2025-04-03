@@ -49,4 +49,9 @@ jspm_packages/
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Чувствительные данные
+credentials.txt
+htpasswd/
+nginx_ssl/ 
