@@ -36,7 +36,7 @@ cd tools/wiremock_viewer
 ./run.sh
 ```
 
-После запуска откройте браузер и перейдите по адресу: `http://localhost:8000`
+После запуска откройте браузер и перейдите по адресу: `http://localhost:8001`
 
 ## Основные функции WireMock
 
@@ -55,12 +55,10 @@ project/
 │   ├── README.md             # Этот файл
 │   ├── wiremock_installation.md
 │   ├── wiremock_json_mappings.md
-│   ├── iiko_api_mappings.md
 │   ├── wiremock_viewer.md
 │   └── wiremock_viewer_tech.md
 │
 ├── mappings/                 # Готовые маппинги для WireMock
-│   ├── iiko/                 # Маппинги для Iiko API
 │   └── other/                # Другие примеры маппингов
 │
 └── tools/                    # Инструменты для работы с WireMock
@@ -79,4 +77,3 @@ project/
 - [GitHub репозиторий WireMock](https://github.com/wiremock/wiremock)
 - [Справочник по API WireMock](http://wiremock.org/docs/api/)
 - [WireMock Docker Image](https://hub.docker.com/r/wiremock/wiremock)
-- [Документация Iiko API](https://api-docs.syrve.digital/) 

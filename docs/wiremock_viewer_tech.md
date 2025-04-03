@@ -249,7 +249,7 @@ let currentFullscreenEditor = null; // Текущий полноэкранный
    const wiremockPath = pathname.replace('/proxy/wiremock', '');
    
    // Получаем параметры из URL запроса
-   const wiremockHost = parsedUrl.query.host || 'rdsh2.lphub.net';
+   const wiremockHost = parsedUrl.query.host || 'localhost';
    const wiremockPort = parsedUrl.query.port || '8080';
    ```
 
