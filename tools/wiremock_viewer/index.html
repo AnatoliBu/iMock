@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireMock Mappings Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- JSONEditor стили -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.0/jsoneditor.min.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WireMock Mappings Viewer и Редактор</h1>
+            <details open class="collapsible-section" id="settings-section">
+                <summary class="collapsible-header">Настройки и фильтры</summary>
+                <div class="collapsible-content">
+                    <div class="server-config">
+                        <div class="form-group">
+                            <label for="server-url">URL сервера:</label>
+                            <input type="text" id="server-url" value="http://localhost:8080" />
+                        </div>
+                        <div class="form-group">
+                            <label for="auth-token">Токен:</label>
+                            <input type="text" id="auth-token" value="Bearer token" />
+                        </div>
+                        <button id="load-mappings" class="btn btn-primary">Загрузить маппинги</button>
+                    </div>
+                    
+                    <div class="filtering">
+                        <div class="form-group">
+                            <label for="filter-text">Фильтр:</label>
+                            <input type="text" id="filter-text" placeholder="URL, метод или ID..." />
+                        </div>
+                        <div class="form-group">
+                            <label for="filter-type">Тип:</label>
+                            <select id="filter-type">
+                                <option value="all">Все</option>
+                                <option value="proxy">Прокси</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="filter-tags">Фильтр по тегу:</label>
+                            <input type="text" id="filter-tags" placeholder="Введите имя тега..." />
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </header>
+        
+        <main>
+            <div id="mappings-container">
+                <div class="loading" id="loading">Загрузка маппингов...</div>
+                <div id="mappings-list"></div>
+            </div>
+            
+            <div id="editor-container" class="hidden">
+                <h2>Редактор маппинга</h2>
+                <div class="editor-actions">
+                    <button id="save-mapping" class="btn btn-success">Сохранить</button>
+                    <button id="cancel-edit" class="btn btn-secondary">Отмена</button>
+                    <button id="delete-mapping" class="btn btn-danger">Удалить</button>
+                </div>
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab-button active" data-tab="request">Запрос</div>
+                        <div class="tab-button" data-tab="response">Ответ</div>
+                        <div class="tab-button" data-tab="proxy" style="display:none;">Прокси</div>
+                        <div class="tab-button" data-tab="metadata">Метаданные</div>
+                        <div class="tab-button" data-tab="raw">JSON</div>
+                    </div>
+                    <div class="tab-content">
+                        <div id="request-tab" class="tab-pane active">
+                            <!-- Форма редактирования запроса -->
+                            <div class="form-group">
+                                <label for="edit-method">Метод:</label>
+                                <select id="edit-method">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="DELETE">DELETE</option>
+                                    <option value="ANY">ANY</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-url">URL:</label>
+                                <input type="text" id="edit-url" />
+                            </div>
+                            <div class="form-group">
+                                <label>Headers:</label>
+                                <div id="request-headers" class="key-value-operator-editor"></div>
+                                <button id="add-request-header" class="btn btn-small">+ Добавить</button>
+                                <span class="help-icon" data-help="Заголовки запроса состоят из ключа, оператора сравнения и значения. Операторы: equalTo (равно), contains (содержит), matches (соответствует регулярному выражению) и др.">?</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Body Patterns:</label>
+                                <div id="body-patterns" class="key-value-operator-editor"></div>
+                                <button id="add-body-pattern" class="btn btn-small">+ Добавить</button>
+                                <span class="help-icon" data-help="Шаблоны тела запроса: equalToJson (соответствует JSON), matchesJsonPath (JSONPath-выражение), equalTo (точное соответствие), contains (содержит строку), matches (регулярное выражение)">?</span>
+                            </div>
+                        </div>
+                        <div id="response-tab" class="tab-pane">
+                            <!-- Форма редактирования ответа -->
+                            <div class="form-group">
+                                <label for="edit-status">Статус код:</label>
+                                <input type="number" id="edit-status" />
+                            </div>
+                            <div class="form-group">
+                                <label>Headers:</label>
+                                <div id="response-headers" class="key-value-editor"></div>
+                                <button id="add-response-header" class="btn btn-small">+ Добавить</button>
+                                <span class="help-icon" data-help="Значения заголовков ответа указываются как простые строковые значения. Например: 'application/json'">?</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-response-body">Body:</label>
+                                <div class="editor-wrapper">
+                                    <div id="edit-response-body-editor" class="json-editor"></div>
+                                    <button class="btn btn-small btn-expand" data-target="edit-response-body-editor">
+                                        <span class="expand-icon">⤢</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-delay">Задержка (мс):</label>
+                                <input type="number" id="edit-delay" />
+                            </div>
+                        </div>
+                        <div id="proxy-tab" class="tab-pane">
+                            <!-- Форма настройки прокси -->
+                            <div class="form-group">
+                                <label for="proxy-base-url">URL прокси:</label>
+                                <input type="text" id="proxy-base-url" placeholder="https://api-server.com" />
+                                <p class="hint">URL сервера, на который будут проксироваться запросы</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Дополнительные заголовки прокси-запроса:</label>
+                                <div id="proxy-headers" class="key-value-editor"></div>
+                                <button id="add-proxy-header" class="btn btn-small">+ Добавить</button>
+                                <span class="help-icon" data-help="Заголовки, которые будут добавлены к проксируемому запросу. Указываются как простые строковые значения.">?</span>
+                            </div>
+                            <div class="proxy-info">
+                                <p><i>Примечание:</i> Маппинги типа прокси перенаправляют запросы на указанный URL вместо возврата статического ответа.</p>
+                                <p>Прокси-маппинги особенно полезны для:</p>
+                                <ul>
+                                    <li>Перенаправления запросов на реальный API с возможностью модификации</li>
+                                    <li>Создания "прозрачных" маппингов для неподдерживаемых эндпоинтов</li>
+                                    <li>Тестирования с частичным использованием реального API</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="metadata-tab" class="tab-pane">
+                            <!-- Метаданные и дополнительные настройки -->
+                            <div class="form-group">
+                                <label for="edit-name">Название:</label>
+                                <input type="text" id="edit-name" />
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-priority">Приоритет:</label>
+                                <input type="number" id="edit-priority" />
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-persistent">Постоянный:</label>
+                                <input type="checkbox" id="edit-persistent" />
+                            </div>
+                        </div>
+                        <div id="raw-tab" class="tab-pane">
+                            <!-- Редактирование сырого JSON -->
+                            <div class="form-group">
+                                <div class="editor-wrapper">
+                                    <div id="edit-raw-json-editor" class="json-editor"></div>
+                                    <button class="btn btn-small btn-expand" data-target="edit-raw-json-editor">
+                                        <span class="expand-icon">⤢</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <div id="toast" class="toast hidden"></div>
+        <div id="fullscreen-editor-container" class="hidden">
+            <div class="fullscreen-header">
+                <span id="fullscreen-editor-title">JSON Editor</span>
+                <button id="fullscreen-close" class="btn">Закрыть [Esc]</button>
+            </div>
+            <div id="fullscreen-editor"></div>
+        </div>
+    </div>
+    
+    <!-- JSONEditor библиотека -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.0/jsoneditor.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
