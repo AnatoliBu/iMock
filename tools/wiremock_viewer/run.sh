@@ -21,11 +21,11 @@ else
     if command -v python3 &>/dev/null; then
         echo "Запуск сервера на Python 3..."
         cd "$current_dir"
-        python3 -m http.server 8000
+        python3 -m http.server 8001
     elif command -v python &>/dev/null; then
         echo "Запуск сервера на Python..."
         cd "$current_dir"
-        python -m SimpleHTTPServer 8000
+        python -m SimpleHTTPServer 8001
     else
         echo "Ни Node.js, ни Python не найдены. Установите Node.js для полноценной работы инструмента."
         exit 1

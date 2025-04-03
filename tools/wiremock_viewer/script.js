@@ -42,6 +42,7 @@ const elements = {
     addProxyHeader: document.getElementById('add-proxy-header'),
     addBodyPattern: document.getElementById('add-body-pattern'),
     bodyPatterns: document.getElementById('body-patterns'),
+    duplicateButton: document.getElementById('duplicate-mapping'),
 };
 
 // Настройки JSON редактора
@@ -94,6 +95,7 @@ function init() {
     elements.saveButton.addEventListener('click', saveMapping);
     elements.cancelButton.addEventListener('click', cancelEdit);
     elements.deleteButton.addEventListener('click', deleteMapping);
+    elements.duplicateButton.addEventListener('click', duplicateMapping);
     elements.addRequestHeader.addEventListener('click', () => addHeaderField('request', '', 'equalTo', ''));
     elements.addResponseHeader.addEventListener('click', () => addHeaderField('response', '', 'equalTo', ''));
     elements.addProxyHeader.addEventListener('click', () => addHeaderField('proxy', '', 'equalTo', ''));
@@ -1578,6 +1580,88 @@ function addBodyPattern(operator = 'equalToJson', value = '') {
     pair.appendChild(valueInput);
     pair.appendChild(removeButton);
     container.appendChild(pair);
+}
+
+// Дублирование маппинга
+async function duplicateMapping() {
+    // Обновляем объект маппинга из полей формы
+    updateMappingFromForm();
+    
+    // Валидация маппинга
+    if (!validateMapping()) {
+        return;
+    }
+    
+    const serverUrl = elements.serverUrl.value.trim();
+    const authToken = elements.authToken.value.trim();
+    
+    if (!serverUrl) {
+        showToast('Укажите URL сервера', true);
+        return;
+    }
+    
+    try {
+        // Создаем копию текущего маппинга
+        const mappingCopy = JSON.parse(JSON.stringify(currentMapping));
+        
+        // Генерируем новый UUID для копии
+        mappingCopy.id = generateUUID();
+        
+        // Если есть имя, добавляем к нему "(копия)"
+        if (mappingCopy.name) {
+            mappingCopy.name = `${mappingCopy.name} (копия)`;
+        } else {
+            mappingCopy.name = "Копия маппинга";
+        }
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (authToken) {
+            headers['Authorization'] = authToken;
+        }
+        
+        // Создаем прокси URL для создания нового маппинга
+        const proxyUrl = createProxyUrl(serverUrl, '/__admin/mappings');
+        if (!proxyUrl) {
+            throw new Error('Неверный формат URL сервера');
+        }
+        
+        console.log('Отправка запроса через прокси для создания копии:', proxyUrl);
+        
+        const response = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(mappingCopy)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        showToast('Маппинг успешно дублирован');
+        
+        // Добавляем новый маппинг в список
+        mappings.push(mappingCopy);
+        
+        // Обновляем отображение
+        filterMappings();
+        
+        // Открываем новый маппинг для редактирования
+        openEditor(mappingCopy);
+    } catch (error) {
+        console.error('Error duplicating mapping:', error);
+        showToast(`Ошибка дублирования: ${error.message}`, true);
+    }
+}
+
+// Генерирование UUID v4
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
 
 // Вызываем инициализацию при загрузке страницы
