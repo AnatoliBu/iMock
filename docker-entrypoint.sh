@@ -63,8 +63,15 @@ const wiremockProxy = createProxyMiddleware({
         '^/proxy/wiremock': '',
     },
     onProxyReq: (proxyReq, req, res) => {
-        if (wiremockToken) {
+        // Приоритет: 
+        // 1. X-Original-Authorization (если Nginx добавляет этот заголовок)
+        // 2. WIREMOCK_TOKEN из переменных окружения
+        if (req.headers['x-original-authorization']) {
+            proxyReq.setHeader('Authorization', req.headers['x-original-authorization']);
+            console.log('Using X-Original-Authorization header for WireMock API');
+        } else if (wiremockToken) {
             proxyReq.setHeader('Authorization', wiremockToken);
+            console.log('Using configured token for WireMock API');
         }
         
         console.log(\`Proxying \${req.method} \${req.url} to \${wiremockHost}:\${wiremockPort}\`);

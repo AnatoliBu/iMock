@@ -24,13 +24,13 @@ chmod +x docker-build.sh
 1. Сборка образа:
 
 ```bash
-docker build -t imock-wiremock-viewer .
+docker build -t imock .
 ```
 
 2. Запуск контейнера:
 
 ```bash
-docker run -d --name imock-wiremock-viewer -p 8001:8001 imock-wiremock-viewer
+docker run -d --name imock -p 8001:8001 imock
 ```
 
 После запуска WireMock Viewer будет доступен по адресу [http://localhost:8001](http://localhost:8001)
@@ -40,7 +40,7 @@ docker run -d --name imock-wiremock-viewer -p 8001:8001 imock-wiremock-viewer
 Если вы хотите использовать другой порт, например 9000, используйте следующую команду:
 
 ```bash
-docker run -d --name imock-wiremock-viewer -p 9000:8001 imock-wiremock-viewer
+docker run -d --name imock -p 9000:8001 imock
 ```
 
 После запуска WireMock Viewer будет доступен по адресу [http://localhost:9000](http://localhost:9000)
@@ -62,13 +62,13 @@ docker run -d --name imock-wiremock-viewer -p 9000:8001 imock-wiremock-viewer
 Для остановки контейнера:
 
 ```bash
-docker stop imock-wiremock-viewer
+docker stop imock
 ```
 
 Для удаления контейнера:
 
 ```bash
-docker rm imock-wiremock-viewer
+docker rm imock
 ```
 
 ## Удаление образа
@@ -76,5 +76,5 @@ docker rm imock-wiremock-viewer
 Если вы хотите удалить образ:
 
 ```bash
-docker rmi imock-wiremock-viewer
+docker rmi imock
 ``` 
